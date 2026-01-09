@@ -1,0 +1,251 @@
+# config/sources.yaml
+# 数据源配置文件
+# 版本：1.0.0
+# 最后更新：2026-01-09
+
+version: "1.0.0"
+
+# 全局默认配置
+defaults:
+  timeout: 20
+  retries: 2
+  user_agent: "DailyTopicSelector/1.0 (+https://github.com/yourname/daily-topic-selector)"
+  request_delay: 0.5
+
+# 数据源定义
+sources:
+  # =========================================
+  # TLDR AI
+  # =========================================
+  tldr_ai:
+    enabled: true
+    name: "TLDR AI"
+    description: "AI 领域每日简报"
+
+    fetch_methods:
+      - method: json_extract
+        priority: 1
+        config:
+          archive_url: "https://tldr.tech/ai/archives"
+          json_pattern: '"campaigns":\s*(\[.*?\])'
+          newsletter_url_template: "https://tldr.tech/ai/{date}"
+          article_patterns:
+            title: '"children":\s*"([^"]+)"'
+            url: '"href":\s*"([^"]+)"'
+            summary: '"__html":\s*"([^"]+)"'
+
+      - method: html
+        priority: 2
+        config:
+          url: "https://tldr.tech/ai/archives"
+          selectors:
+            links: 'a[href^="/ai/202"]'
+          date_from_url:
+            pattern: '/ai/(\d{4}-\d{2}-\d{2})'
+            format: "%Y-%m-%d"
+
+    field_mapping:
+      title: title
+      url: url
+      summary: summary
+      published_at: date
+
+    default_tags: ["ai", "tech", "newsletter"]
+
+    scoring:
+      base_score: 40
+      keyword_bonus:
+        - keywords: ["OpenAI", "Anthropic", "GPT", "Claude", "Gemini"]
+          bonus: 10
+        - keywords: ["agent", "AGI", "reasoning"]
+          bonus: 8
+
+  # =========================================
+  # Hacker News
+  # =========================================
+  hacker_news:
+    enabled: true
+    name: "Hacker News"
+    description: "技术社区热门内容"
+
+    fetch_methods:
+      - method: api
+        priority: 1
+        config:
+          endpoints:
+            topstories: "https://hacker-news.firebaseio.com/v0/topstories.json"
+            newstories: "https://hacker-news.firebaseio.com/v0/newstories.json"
+            item: "https://hacker-news.firebaseio.com/v0/item/{id}.json"
+          default_list: "topstories"
+          batch_concurrency: 10
+
+      - method: rss
+        priority: 2
+        config:
+          url: "https://news.ycombinator.com/rss"
+        limitations:
+          - "无法获取 points（分数）"
+          - "无法获取 descendants（评论数）"
+
+    field_mapping:
+      title: title
+      url: url
+      author: by
+      published_at: time
+      raw.points: score
+      raw.comments: descendants
+      raw.hn_item_id: id
+
+    default_tags: ["tech", "startup", "programming"]
+
+    scoring:
+      base_score: 20
+      formula: "base + (points * 0.4) + (comments * 0.6)"
+      components:
+        points_weight: 0.4
+        comments_weight: 0.6
+      keyword_bonus:
+        - keywords: ["AI", "LLM", "GPT", "machine learning"]
+          bonus: 15
+        - keywords: ["startup", "funding", "YC"]
+          bonus: 5
+
+  # =========================================
+  # Import AI (Jack Clark)
+  # =========================================
+  import_ai:
+    enabled: true
+    name: "Import AI"
+    description: "AI 政策与研究深度分析"
+
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://jack-clark.net/feed/"
+          extract_full_content: true
+
+      - method: rss
+        priority: 2
+        config:
+          url: "https://importai.substack.com/feed"
+
+      - method: html
+        priority: 3
+        config:
+          url: "https://jack-clark.net/"
+          selectors:
+            date: "h5.post-date"
+            title: "h3 > a"
+            link: "h3 > a[href]"
+            author: "h4.author"
+
+    field_mapping:
+      title: title
+      url: link
+      author: "dc:creator"
+      published_at: pubDate
+      summary: description
+      raw.full_content: "content:encoded"
+
+    default_tags: ["ai", "policy", "research", "deepdive"]
+
+    scoring:
+      base_score: 60
+      keyword_bonus:
+        - keywords: ["policy", "regulation", "government"]
+          bonus: 10
+        - keywords: ["safety", "alignment", "risk"]
+          bonus: 8
+
+  # =========================================
+  # James Clear
+  # =========================================
+  james_clear:
+    enabled: true
+    name: "James Clear"
+    description: "习惯与个人成长"
+
+    fetch_methods:
+      - method: html
+        priority: 1
+        config:
+          url: "https://jamesclear.com/3-2-1"
+          selectors:
+            links: 'a[href*="/3-2-1/"]'
+          date_from_url:
+            pattern: '/3-2-1/(\w+)-(\d+)-(\d+)'
+            format: "month_name-day-year"
+          fetch_detail: true
+          detail_selectors:
+            content: "article .entry-content"
+
+      - method: rss
+        priority: 2
+        config:
+          url: "https://jamesclear.com/feed"
+        warnings:
+          - "RSS 可能长期未更新，建议以 HTML 抓取为主"
+
+    field_mapping:
+      title: title
+      url: link
+      author: "James Clear"
+      published_at: date_from_url
+      summary: excerpt
+
+    default_tags: ["habits", "productivity", "self-improvement", "newsletter"]
+
+    scoring:
+      base_score: 35
+      keyword_bonus:
+        - keywords: ["habit", "atomic", "system"]
+          bonus: 10
+        - keywords: ["discipline", "focus", "routine"]
+          bonus: 5
+
+  # =========================================
+  # Wait But Why
+  # =========================================
+  wait_but_why:
+    enabled: true
+    name: "Wait But Why"
+    description: "长文深度思考"
+
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://waitbutwhy.com/feed"
+          extract_full_content: true
+
+      - method: html
+        priority: 2
+        config:
+          url: "https://waitbutwhy.com/"
+          selectors:
+            title: "h3 > a, h5 > a"
+            link: "h3 > a[href], h5 > a[href]"
+            thumbnail: "img[src*='wp-content/uploads']"
+            comments: 'a[href$="#comments"]'
+          date_from_url:
+            pattern: '/(\d{4})/(\d{2})/'
+            format: "year/month"
+
+    field_mapping:
+      title: title
+      url: link
+      author: "dc:creator"
+      published_at: pubDate
+      summary: description
+      raw.full_content: "content:encoded"
+      raw.comments: "slash:comments"
+      tags: category
+
+    default_tags: ["longform", "thinking", "philosophy"]
+
+    scoring:
+      base_score: 30
+      content_length_bonus:
+        threshold: 5000
+        bonus: 20

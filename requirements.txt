@@ -1,0 +1,18 @@
+# Core dependencies
+requests>=2.28.0           # HTTP requests
+feedparser>=6.0.0          # RSS/Atom parsing
+beautifulsoup4>=4.11.0     # HTML parsing
+lxml>=4.9.0                # Fast HTML parser
+pyyaml>=6.0                # YAML config parsing
+python-dateutil>=2.8.0     # Date parsing
+
+# Optional dependencies
+aiohttp>=3.8.0             # Async HTTP (for better concurrency)
+tenacity>=8.0.0            # Retry mechanism
+rich>=13.0.0               # Beautiful CLI output
+jsonschema>=4.0.0          # Config validation
+
+# Development dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.20.0
+responses>=0.22.0          # Mock HTTP requests

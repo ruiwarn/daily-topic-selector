@@ -1,0 +1,34 @@
+# config/scoring.yaml
+# 评分规则配置
+
+version: "1.0.0"
+
+# 评分公式说明
+# final_score = base_score + source_bonus + keyword_bonus + engagement_bonus
+
+# 全局关键词加权
+global_keywords:
+  ai_hot:
+    keywords: ["OpenAI", "Anthropic", "Claude", "GPT-4", "GPT-5", "Gemini", "LLM"]
+    bonus: 15
+  ai_concepts:
+    keywords: ["agent", "AGI", "reasoning", "inference", "RAG", "fine-tuning"]
+    bonus: 10
+  growth:
+    keywords: ["habit", "system", "discipline", "focus", "productivity"]
+    bonus: 8
+
+# 评分归一化
+normalization:
+  enabled: true
+  min_score: 0
+  max_score: 100
+
+# 可解释性要求
+explainability:
+  record_breakdown: true
+  fields:
+    - base
+    - keyword_bonus
+    - engagement_bonus
+    - source_bonus
