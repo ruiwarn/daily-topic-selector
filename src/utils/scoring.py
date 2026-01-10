@@ -105,14 +105,8 @@ class Scorer:
         if content_bonus_config:
             breakdown.content_bonus = self._calculate_content_bonus(item, content_bonus_config)
 
-        # 计算总分
+        # 计算总分（归一化在批量评分时进行）
         total = breakdown.total
-
-        # 归一化
-        if self.normalization.get('enabled', True):
-            min_score = self.normalization.get('min_score', 0)
-            max_score = self.normalization.get('max_score', 100)
-            total = max(min_score, min(max_score, total))
 
         return {
             'score': round(total, 2),
@@ -122,6 +116,10 @@ class Scorer:
     def _get_searchable_text(self, item: Dict[str, Any]) -> str:
         """
         获取用于关键词匹配的文本
+
+        注意：只匹配 title 和 summary，不匹配 tags。
+        因为 tags 可能包含 default_tags（由配置添加），
+        如果匹配 tags 会导致所有条目都命中相同关键词。
 
         Args:
             item: 内容条目
@@ -133,10 +131,6 @@ class Scorer:
             item.get('title', ''),
             item.get('summary', ''),
         ]
-        # 包含标签
-        tags = item.get('tags', [])
-        if tags:
-            parts.extend(tags)
 
         return ' '.join(str(p) for p in parts if p)
 
@@ -261,11 +255,29 @@ class Scorer:
         """
         result = []
 
+        # 第一遍：计算原始分数
         for item in items:
             score_result = self.score(item, source_id, source_scoring)
             item['score'] = score_result['score']
             item['raw'] = item.get('raw', {})
             item['raw']['score_detail'] = score_result['score_detail']
             result.append(item)
+
+        # 第二遍：归一化（基于批次内的实际分数范围）
+        if self.normalization.get('enabled', True) and len(result) > 1:
+            scores = [item['score'] for item in result]
+            raw_min = min(scores)
+            raw_max = max(scores)
+
+            # 只有当分数有差异时才归一化
+            if raw_max > raw_min:
+                target_min = self.normalization.get('min_score', 0)
+                target_max = self.normalization.get('max_score', 100)
+
+                for item in result:
+                    raw_score = item['score']
+                    # Min-Max 归一化
+                    normalized = target_min + (raw_score - raw_min) / (raw_max - raw_min) * (target_max - target_min)
+                    item['score'] = round(normalized, 1)
 
         return result

@@ -27,39 +27,100 @@
 ### 基础用法
 
 ```bash
-# 抓取最近 1 天的内容（默认，自动查找配置）
-python $SKILL_DIR/scripts/run.py
+# 抓取最近 1 天的内容（输出到项目目录的 daily_output/）
+python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR
 
 # 抓取最近 N 天的内容
-python $SKILL_DIR/scripts/run.py --days 3
+python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --days 3
 
-# 指定输出目录
-python $SKILL_DIR/scripts/run.py --output_dir ./output
+# 指定其他输出目录
+python $SKILL_DIR/scripts/run.py --output_dir /path/to/output
 ```
+
+**注意**：必须指定 `--output_dir $SKILL_DIR` 以确保输出文件位于 `$SKILL_DIR/daily_output/YYYY-MM-DD/` 目录下。
 
 ### 高级用法
 
 ```bash
 # 只抓取特定源
-python $SKILL_DIR/scripts/run.py --only_sources hn,import_ai
+python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --only_sources hn,import_ai
 
 # 指定时间范围
-python $SKILL_DIR/scripts/run.py --since 2024-01-01T00:00:00Z
+python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --since 2024-01-01T00:00:00Z
 
 # 调整抓取参数
-python $SKILL_DIR/scripts/run.py --limit_per_source 100 --timeout 30
+python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --limit_per_source 100 --timeout 30
 ```
 
 ## 输出文件
 
-运行后会生成 4 个文件：
+运行后会生成 5 个文件：
 
 | 文件 | 说明 |
 |------|------|
-| `daily_topics.md` | 人类可读的 Markdown 日报 |
+| `daily_topics.md` | 原始 Markdown 日报 |
+| `daily_topics_zh.md` | 增强版日报（含中文翻译和摘要） |
 | `daily_topics.json` | 机器可读的 JSON 数据 |
 | `fetch_log.txt` | 抓取日志 |
 | `run_meta.json` | 运行元信息 |
+
+## 执行流程
+
+此 skill 分两步执行：
+
+### 步骤 1：数据抓取（Python 脚本）
+
+运行 `run.py` 抓取数据并生成原始输出文件。
+
+### 步骤 2：内容增强（Claude 后处理）
+
+**重要**：Python 脚本执行完成后，你需要自动执行以下后处理步骤来增强可读性：
+
+1. **读取数据**：读取同目录下的 `daily_topics.json` 获取所有条目
+2. **翻译标题**：对于英文标题，生成简洁的中文翻译
+3. **生成摘要**：根据标题和上下文，为每个条目生成 1-2 句中文摘要
+4. **生成增强版文件**：在**同一目录下**创建 `daily_topics_zh.md`（不要覆盖原文件）
+
+**关键**：增强版文件必须与原始文件在同一目录下（如 `daily_output/2026-01-10/daily_topics_zh.md`），不要放到其他位置。
+
+#### 增强后的 Markdown 格式
+
+```markdown
+### 1. [原始英文标题](URL)
+- **中文**：中文标题翻译
+- **时间**：2026-01-09 16:46 | **分数**：85.0
+- **Points**: 509 | **Comments**: 701
+- **标签**：`云服务`, `监管`, `科技公司`
+- **摘要**：一句话中文摘要，帮助读者快速了解文章主题和价值。
+```
+
+#### 翻译和摘要要求
+
+- **中文标题**：简洁准确，保留关键信息，不超过 30 字
+- **中文摘要**：1-2 句话，说明文章主题、核心观点或为什么值得阅读
+- **标签优化**：将通用标签（如 tech, startup）替换为更具体的中文标签
+- **批量处理**：一次性处理所有条目，然后一次性写入文件
+
+#### 处理示例
+
+原始条目：
+```json
+{
+  "title": "Cloudflare CEO on the Italy fines",
+  "tags": ["tech", "startup", "programming"],
+  ...
+}
+```
+
+增强后：
+```markdown
+### 1. [Cloudflare CEO on the Italy fines](https://...)
+- **中文**：Cloudflare CEO 回应意大利罚款事件
+- **时间**：2026-01-09 16:46 | **分数**：100.0
+- **Points**: 509 | **Comments**: 701
+- **标签**：`云服务`, `欧盟监管`, `互联网基础设施`
+- **摘要**：Cloudflare CEO 在社交媒体上回应意大利监管机构的罚款决定，讨论了欧洲互联网监管趋势及其对云服务商的影响。
+```
 
 ## 命令行参数
 
@@ -93,7 +154,23 @@ pip install requests feedparser beautifulsoup4 lxml PyYAML
 2. `~/.config/daily-topic-selector/` （用户自定义配置）
 3. `$SKILL_DIR/config/` （默认配置）
 
-**推荐**：将自定义配置放在 `~/.config/daily-topic-selector/`，这样更新 skill 时不会丢失配置。
+### 配置合并机制
+
+**重要**：用户配置与默认配置会自动合并，这意味着：
+
+- ✅ **自动获取新源**：当 skill 更新添加了新的数据源，用户无需修改配置即可使用
+- ✅ **保留用户自定义**：用户对现有源的修改不会被覆盖
+- ✅ **灵活禁用源**：用户可以通过 `enabled: false` 禁用不想要的源
+
+#### 合并规则
+
+| 场景 | 行为 |
+|------|------|
+| 默认源，用户未修改 | 使用默认配置（自动获取更新） |
+| 默认源，用户有自定义 | 用户配置覆盖默认配置 |
+| skill 新增源，用户无配置 | 自动启用新源 |
+| skill 新增源，用户设置 `enabled: false` | 保持禁用 |
+| 用户自定义源（默认配置中不存在） | 保留用户配置 |
 
 ### 初始化用户配置
 
@@ -103,6 +180,48 @@ pip install requests feedparser beautifulsoup4 lxml PyYAML
 mkdir -p ~/.config/daily-topic-selector
 cp $SKILL_DIR/config/*.yaml ~/.config/daily-topic-selector/
 ```
+
+**注意**：复制后用户配置将覆盖对应的默认配置。如果只想微调某些设置，建议只创建包含需要修改部分的配置文件。
+
+### 最佳实践
+
+#### 方式一：完全自定义（复制全部配置）
+
+适合需要完全控制配置的用户：
+
+```bash
+cp $SKILL_DIR/config/*.yaml ~/.config/daily-topic-selector/
+# 编辑配置文件进行自定义
+```
+
+⚠️ 缺点：skill 更新新源时需要手动添加
+
+#### 方式二：增量自定义（推荐）
+
+只创建包含需要修改部分的配置，其余使用默认值：
+
+```yaml
+# ~/.config/daily-topic-selector/sources.yaml
+# 只需要写需要修改的部分
+
+sources:
+  # 禁用不想要的源
+  wait_but_why:
+    enabled: false
+
+  # 修改现有源的配置
+  hacker_news:
+    scoring:
+      base_score: 30  # 调整基础分
+
+  # 添加自定义源
+  my_custom_source:
+    enabled: true
+    name: "我的数据源"
+    # ...
+```
+
+✅ 优点：自动获取 skill 更新的新源
 
 ### 配置文件
 

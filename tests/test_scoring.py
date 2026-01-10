@@ -103,18 +103,28 @@ class TestScorer:
         assert result['score_detail']['engagement_bonus'] == expected_engagement
 
     def test_score_normalization(self):
-        """测试评分归一化"""
+        """测试评分归一化（在批量评分中进行 Min-Max 归一化）"""
         scorer = Scorer(normalization={
             'enabled': True,
             'min_score': 0,
             'max_score': 100
         })
 
-        # 测试超过 100 的情况
-        item = {
-            'title': 'OpenAI GPT Claude Gemini AI LLM',
-            'raw': {'points': 1000, 'comments': 500}
-        }
+        # 创建多个条目以测试批量归一化
+        items = [
+            {
+                'title': 'Low engagement article',
+                'raw': {'points': 10, 'comments': 5}
+            },
+            {
+                'title': 'OpenAI GPT Claude Gemini AI LLM',
+                'raw': {'points': 1000, 'comments': 500}
+            },
+            {
+                'title': 'Medium engagement',
+                'raw': {'points': 100, 'comments': 50}
+            }
+        ]
         scoring_config = {
             'base_score': 50,
             'components': {'points_weight': 0.4, 'comments_weight': 0.6},
@@ -123,11 +133,17 @@ class TestScorer:
             ]
         }
 
-        result = scorer.score(item, 'hacker_news', scoring_config)
+        results = scorer.score_batch(items, 'hacker_news', scoring_config)
 
-        # 应该被归一化到 100
-        assert result['score'] <= 100
-        assert result['score'] >= 0
+        # 所有分数应该被归一化到 0-100 范围
+        for item in results:
+            assert item['score'] >= 0
+            assert item['score'] <= 100
+
+        # 最高分应该是 100，最低分应该是 0
+        scores = [item['score'] for item in results]
+        assert max(scores) == 100
+        assert min(scores) == 0
 
     def test_batch_scoring(self):
         """测试批量评分"""

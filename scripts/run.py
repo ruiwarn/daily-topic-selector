@@ -109,6 +109,40 @@ def parse_args():
     return parser.parse_args()
 
 
+def create_daily_output_dir(base_dir: str) -> Path:
+    """
+    创建每日输出目录
+
+    目录结构：{base_dir}/daily_output/YYYY-MM-DD[_N]
+    如果当天目录已存在，则添加后缀 _1, _2, ...
+
+    Args:
+        base_dir: 基础输出目录
+
+    Returns:
+        Path: 创建的输出目录路径
+    """
+    today = datetime.now().strftime('%Y-%m-%d')
+    daily_output_base = Path(base_dir) / 'daily_output'
+    daily_output_base.mkdir(parents=True, exist_ok=True)
+
+    # 尝试创建今天的目录
+    target_dir = daily_output_base / today
+
+    if not target_dir.exists():
+        target_dir.mkdir(parents=True, exist_ok=True)
+        return target_dir
+
+    # 目录已存在，查找可用的后缀
+    suffix = 1
+    while True:
+        target_dir = daily_output_base / f"{today}_{suffix}"
+        if not target_dir.exists():
+            target_dir.mkdir(parents=True, exist_ok=True)
+            return target_dir
+        suffix += 1
+
+
 def main():
     """主函数"""
     args = parse_args()
@@ -118,12 +152,13 @@ def main():
     log_level = 'DEBUG' if args.verbose else args.log_level
     logger = setup_logger(level=log_level)
 
-    # 输出目录
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # 输出目录：daily_output/YYYY-MM-DD[_N]
+    output_dir = create_daily_output_dir(args.output_dir)
 
-    # 历史文件
-    history_file = args.history_file or str(output_dir / 'history.jsonl')
+    # 历史文件放在 daily_output 根目录，所有日期共享
+    base_output_dir = Path(args.output_dir) / 'daily_output'
+    base_output_dir.mkdir(parents=True, exist_ok=True)
+    history_file = args.history_file or str(base_output_dir / 'history.jsonl')
 
     # 抓取日志
     fetch_log = FetchLogger(str(output_dir / 'fetch_log.txt'))

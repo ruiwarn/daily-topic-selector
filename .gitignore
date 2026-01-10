@@ -28,6 +28,16 @@ Thumbs.db
 /test_output/
 /test_output2/
 
+# Skill outputs (generated files)
+daily_output/
+daily_topics.md
+daily_topics.json
+run_meta.json
+fetch_log.txt
+.topic_history.json
+history.jsonl
+
 # Build artifacts
 build/
 dist/
+.claude/
