@@ -1,3 +1,18 @@
+name: daily-topic-selector
+version: "1.0.0"
+description: Daily topic fetcher that collects articles from multiple sources (RSS, API, HTML), scores and ranks them by relevance, and generates enhanced Chinese reports.
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+user-invocable: true
+triggers:
+  - "/daily-topic-selector"
+  - "抓取今日选题"
+  - "获取每日选题"
+  - "fetch daily topics"
+  - "run daily-topic-selector"
+  - "运行 daily-topic-selector"
+  - "grab daily topics"
+---
+
 # daily-topic-selector
 
 每日选题抓取工具 - 从多个内容源获取最新文章并评分排序
