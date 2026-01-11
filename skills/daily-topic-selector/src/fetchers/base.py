@@ -161,6 +161,15 @@ class BaseFetcher(ABC):
             'raw': raw or {}
         }
 
+    def _get_headers(self) -> Optional[Dict[str, str]]:
+        """
+        获取当前抓取方法的请求头
+        """
+        headers = self.config.get('headers')
+        if isinstance(headers, dict) and headers:
+            return headers
+        return None
+
     def _truncate_summary(
         self,
         summary: Optional[str],

@@ -340,6 +340,15 @@ def main():
     logger.info(f"完成！共获取 {len(new_items)} 条新内容")
     logger.info("=" * 50)
 
+    # 输出结构化结果摘要（供后续处理使用）
+    output_dir_abs = str(output_dir.resolve())
+    print("\n===== RESULT =====")
+    print(f"OUTPUT_DIR={output_dir_abs}")
+    print(f"JSON_FILE={output_dir_abs}/daily_topics.json")
+    print(f"MD_FILE={output_dir_abs}/daily_topics.md")
+    print(f"NEW_COUNT={len(new_items)}")
+    print("==================\n")
+
     # 退出码
     if all(s.get('success', False) for s in source_stats.values()):
         return 0

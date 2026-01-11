@@ -41,7 +41,7 @@ class APIFetcher(BaseFetcher):
 
         try:
             # 获取故事 ID 列表
-            story_ids = self.http_client.get_json(list_url)
+            story_ids = self.http_client.get_json(list_url, headers=self._get_headers())
 
             if not isinstance(story_ids, list):
                 return FetchResult(
@@ -96,7 +96,7 @@ class APIFetcher(BaseFetcher):
             """获取单个条目"""
             try:
                 url = url_template.format(id=item_id)
-                data = self.http_client.get_json(url)
+                data = self.http_client.get_json(url, headers=self._get_headers())
 
                 if data and data.get('type') == 'story':
                     return self._parse_hn_item(data)

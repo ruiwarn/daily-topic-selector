@@ -33,6 +33,10 @@ sources:
             title: '"children":\s*"([^"]+)"'
             url: '"href":\s*"([^"]+)"'
             summary: '"__html":\s*"([^"]+)"'
+          headers:
+            User-Agent: "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
+            Referer: "https://tldr.tech/ai/"
+            Accept-Language: "en-US,en;q=0.9"
 
       - method: html
         priority: 2
@@ -43,6 +47,10 @@ sources:
           date_from_url:
             pattern: '/ai/(\d{4}-\d{2}-\d{2})'
             format: "%Y-%m-%d"
+          headers:
+            User-Agent: "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
+            Referer: "https://tldr.tech/ai/"
+            Accept-Language: "en-US,en;q=0.9"
 
     field_mapping:
       title: title
@@ -104,8 +112,13 @@ sources:
       components:
         points_weight: 0.4
         comments_weight: 0.6
+      engagement:
+        transform: log1p
+        scale: 10
+        points_weight: 0.4
+        comments_weight: 0.6
       keyword_bonus:
-        - keywords: ["AI", "LLM", "GPT", "machine learning"]
+        - keywords: ["AI", "LLM", "GPT", "machine learning", "artificial intelligence", "generative ai"]
           bonus: 15
         - keywords: ["startup", "funding", "YC"]
           bonus: 5
@@ -249,3 +262,442 @@ sources:
       content_length_bonus:
         threshold: 5000
         bonus: 20
+
+  # =========================================
+  # The Rundown AI
+  # =========================================
+  the_rundown_ai:
+    enabled: true
+    name: "The Rundown AI"
+    description: "每日AI新闻简报，覆盖最新工具、模型发布和行业动态"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://www.therundown.ai/rss"  # 若无官方RSS，可改html
+          extract_full_content: true
+      - method: html
+        priority: 2
+        config:
+          url: "https://www.therundown.ai/"
+          selectors:
+            links: 'a[href^="/p/"]'
+            title: "h1"
+            summary: ".post-content"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "daily", "tools", "news"]
+    scoring:
+      base_score: 55
+      keyword_bonus:
+        - keywords: ["OpenAI", "Anthropic", "Claude", "Gemini", "agent"]
+          bonus: 12
+        - keywords: ["tool", "startup", "funding"]
+          bonus: 8
+
+  # =========================================
+  # Superhuman AI
+  # =========================================
+  superhuman_ai:
+    enabled: true
+    name: "Superhuman AI"
+    description: "每日3分钟AI快讯，聚焦工具、新闻和技术应用"
+    fetch_methods:
+      - method: html
+        priority: 1
+        config:
+          url: "https://www.superhuman.ai/"
+          selectors:
+            title: "h2"
+            link: "a[href^='/p/']"
+            summary: ".excerpt"
+          date_from_url:
+            pattern: '/p/(\\d{4}-\\d{2}-\\d{2})'
+      - method: rss
+        priority: 2
+        config:
+          url: "https://www.superhuman.ai/rss"  # 若有官方RSS
+    field_mapping:
+      title: title
+      url: url
+      summary: summary
+      published_at: date
+    default_tags: ["ai", "daily", "tools", "tech"]
+    scoring:
+      base_score: 52
+      keyword_bonus:
+        - keywords: ["tool", "productivity", "application"]
+          bonus: 10
+        - keywords: ["OpenAI", "GPT", "Claude"]
+          bonus: 12
+
+  # =========================================
+  # Ben's Bites
+  # =========================================
+  bens_bites:
+    enabled: true
+    name: "Ben's Bites"
+    description: "每日AI新闻摘要，风格轻松，覆盖工具、投资和研究"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://www.bensbites.com/feed"  # Substack标准RSS
+          extract_full_content: true
+          headers:
+            User-Agent: "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
+            Referer: "https://www.bensbites.com/"
+            Accept-Language: "en-US,en;q=0.9"
+      - method: html
+        priority: 2
+        config:
+          url: "https://www.bensbites.com/archive"
+          selectors:
+            links: 'a[href^="/p/"]'
+          headers:
+            User-Agent: "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
+            Referer: "https://www.bensbites.com/"
+            Accept-Language: "en-US,en;q=0.9"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "daily", "startup", "tools"]
+    scoring:
+      base_score: 50
+      keyword_bonus:
+        - keywords: ["startup", "funding", "tool"]
+          bonus: 10
+        - keywords: ["Claude", "GPT", "agent"]
+          bonus: 12
+
+  # =========================================
+  # The Neuron
+  # =========================================
+  the_neuron:
+    enabled: true
+    name: "The Neuron"
+    description: "每日AI新闻与工具教程"
+    fetch_methods:
+      - method: html
+        priority: 1
+        config:
+          url: "https://www.theneuron.ai/newsletter"
+          selectors:
+            links: 'a[href^="/newsletter/"]'
+            title: "h1"
+            summary: ".content"
+      - method: rss
+        priority: 2
+        config:
+          url: "https://www.theneuron.ai/rss"  # 若有
+    field_mapping:
+      title: title
+      url: url
+      summary: summary
+      published_at: date
+    default_tags: ["ai", "daily", "research", "tools"]
+    scoring:
+      base_score: 48
+      keyword_bonus:
+        - keywords: ["research", "model", "tool"]
+          bonus: 10
+
+  # =========================================
+  # Last Week in AI
+  # =========================================
+  last_week_in_ai:
+    enabled: true
+    name: "Last Week in AI"
+    description: "每周AI新闻总结与评论（深度）"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://lastweekin.ai/feed"
+          extract_full_content: true
+      - method: html
+        priority: 2
+        config:
+          url: "https://lastweekin.ai/"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "weekly", "summary", "news"]
+    scoring:
+      base_score: 58
+      keyword_bonus:
+        - keywords: ["policy", "research", "safety"]
+          bonus: 10
+
+  # =========================================
+  # Nate's Newsletter
+  # =========================================
+  nates_newsletter:
+    enabled: true
+    name: "Nate's Newsletter"
+    description: "每日AI前沿动态、策略与产品拆解"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://natesnewsletter.substack.com/feed"
+          extract_full_content: true
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "daily", "strategy", "agent"]
+    scoring:
+      base_score: 55
+      keyword_bonus:
+        - keywords: ["agent", "strategy", "reasoning"]
+          bonus: 12
+        - keywords: ["OpenAI", "Meta", "acquisition"]
+          bonus: 10
+
+  # =========================================
+  # OpenAI Blog
+  # =========================================
+  openai_blog:
+    enabled: true
+    name: "OpenAI Blog"
+    description: "OpenAI官方博客，实时更新大模型如GPT系列、研究和应用"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://openai.com/blog/rss.xml"
+          extract_full_content: true
+      - method: html
+        priority: 2
+        config:
+          url: "https://openai.com/blog"
+          selectors:
+            title: "h2"
+            link: "a[href^='/blog/']"
+            date: ".date"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "llm", "openai", "research"]
+    scoring:
+      base_score: 60
+      keyword_bonus:
+        - keywords: ["GPT", "OpenAI", "model", "reasoning"]
+          bonus: 15
+        - keywords: ["AGI", "safety", "update"]
+          bonus: 10
+
+  # =========================================
+  # Hugging Face Blog
+  # =========================================
+  hugging_face_blog:
+    enabled: true
+    name: "Hugging Face Blog"
+    description: "开源AI社区博客，实时更新大模型、工具和开源LLM动态"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://huggingface.co/blog/feed.xml"
+          extract_full_content: true
+      - method: html
+        priority: 2
+        config:
+          url: "https://huggingface.co/blog"
+          selectors:
+            title: "h2"
+            link: "a[href^='/blog/']"
+            summary: ".summary"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "llm", "opensource", "huggingface"]
+    scoring:
+      base_score: 58
+      keyword_bonus:
+        - keywords: ["Falcon", "Llama", "model", "fine-tuning"]
+          bonus: 12
+        - keywords: ["agent", "RAG", "inference"]
+          bonus: 10
+
+  # =========================================
+  # MarkTechPost
+  # =========================================
+  marktechpost:
+    enabled: true
+    name: "MarkTechPost"
+    description: "AI研究新闻平台，实时报道大模型突破和论文"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://www.marktechpost.com/feed/"
+          extract_full_content: true
+      - method: html
+        priority: 2
+        config:
+          url: "https://www.marktechpost.com/"
+          selectors:
+            title: "h2.entry-title"
+            link: "a[href]"
+            summary: ".entry-summary"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "research", "llm", "papers"]
+    scoring:
+      base_score: 55
+      keyword_bonus:
+        - keywords: ["Falcon", "Nemotron", "LFM", "model"]
+          bonus: 12
+        - keywords: ["reasoning", "coding", "math"]
+          bonus: 10
+
+  # =========================================
+  # KDnuggets
+  # =========================================
+  kdnuggets:
+    enabled: true
+    name: "KDnuggets"
+    description: "数据科学和AI新闻，实时更新LLM工具、教程和趋势"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://www.kdnuggets.com/feed"
+          extract_full_content: true
+      - method: html
+        priority: 2
+        config:
+          url: "https://www.kdnuggets.com/"
+          selectors:
+            title: "h2"
+            link: "a[href^='/']"
+            summary: ".excerpt"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "data-science", "llm", "tools"]
+    scoring:
+      base_score: 52
+      keyword_bonus:
+        - keywords: ["LLM", "agent", "Ollama", "automation"]
+          bonus: 12
+        - keywords: ["tutorial", "repository", "learning"]
+          bonus: 8
+
+  # =========================================
+  # Qbit AI (量子位)
+  # =========================================
+  qbit_ai:
+    enabled: true
+    name: "Qbit AI"
+    description: "中国AI媒体，实时更新国内外大模型动态，如DeepSeek、Qwen等"
+    fetch_methods:
+      - method: html
+        priority: 1
+        config:
+          url: "https://www.qbitai.com/"
+          selectors:
+            title: "h3"
+            link: "a[href^='/']"
+            summary: ".summary"
+          date_from_url:
+            pattern: '/(\d{4}/\d{2}/\d{2})'
+      - method: rss
+        priority: 2
+        config:
+          url: "https://www.qbitai.com/feed"  # 若有官方RSS
+    field_mapping:
+      title: title
+      url: url
+      summary: summary
+      published_at: date
+    default_tags: ["ai", "china", "llm", "domestic"]
+    scoring:
+      base_score: 60
+      keyword_bonus:
+        - keywords: ["DeepSeek", "Qwen", "Moonshot", "智能体"]
+          bonus: 15
+        - keywords: ["Tesla", "NVIDIA", "OpenAI"]
+          bonus: 10
+
+  # =========================================
+  # AI Weekly
+  # =========================================
+  ai_weekly:
+    enabled: true
+    name: "AI Weekly"
+    description: "每周AI新闻总结，聚焦大模型突破和行业动态"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://aiweekly.co/issues?format=rss"
+          extract_full_content: true
+      - method: html
+        priority: 2
+        config:
+          url: "https://aiweekly.co/"
+          selectors:
+            title: "h2"
+            link: "a[href^='/issues/']"
+            summary: ".content"
+    field_mapping:
+      title: title
+      url: link
+      summary: description
+      published_at: pubDate
+    default_tags: ["ai", "weekly", "summary", "llm"]
+    scoring:
+      base_score: 50
+      keyword_bonus:
+        - keywords: ["breakthrough", "development", "model"]
+          bonus: 10
+        - keywords: ["policy", "ethics", "update"]
+          bonus: 8
+
+  # =========================================
+  # Linux Do
+  # =========================================
+  linux_do:
+    enabled: true
+    name: "Linux Do"
+    description: "Linux Do 社区最新帖子"
+    fetch_methods:
+      - method: rss
+        priority: 1
+        config:
+          url: "https://linux.do/posts.rss"
+          extract_full_content: true
+    field_mapping:
+      title: title
+      url: link
+      author: author
+      published_at: pubDate
+      summary: description
+    default_tags: ["linux", "community", "forum"]
+    scoring:
+      base_score: 35
+      keyword_bonus:
+        - keywords: ["kernel", "server", "ubuntu", "debian", "arch"]
+          bonus: 8
+        - keywords: ["container", "docker", "kubernetes"]
+          bonus: 10

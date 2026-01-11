@@ -44,8 +44,23 @@ def generate_markdown(
     lines.append(f"**配置版本**：sources.yaml v{config_version}")
     lines.append("")
 
-    # 来源统计
+    # 健康检查摘要
     source_stats = stats.get('source_stats', {})
+    if source_stats:
+        failed_sources = [
+            (name, stat.get('error', '未知错误'))
+            for name, stat in source_stats.items()
+            if not stat.get('success', False)
+        ]
+        if failed_sources:
+            lines.append("**健康检查**：")
+            lines.append("- 以下来源抓取失败，通常由站点限制或临时网络问题导致：")
+            for name, error in failed_sources:
+                lines.append(f"  - {name}: {error}")
+            lines.append("- 提示：频繁多次运行可能触发限流或封禁，建议间隔一段时间再试。")
+            lines.append("")
+
+    # 来源统计
     if source_stats:
         lines.append("**各来源统计**：")
         for source_name, source_stat in source_stats.items():

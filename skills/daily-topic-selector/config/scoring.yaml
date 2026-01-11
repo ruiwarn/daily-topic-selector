@@ -11,6 +11,9 @@ global_keywords:
   ai_hot:
     keywords: ["OpenAI", "Anthropic", "Claude", "GPT-4", "GPT-5", "Gemini", "LLM"]
     bonus: 15
+  ai_general:
+    keywords: ["AI", "artificial intelligence", "generative ai", "genai", "foundation model", "language model"]
+    bonus: 10
   ai_concepts:
     keywords: ["agent", "AGI", "reasoning", "inference", "RAG", "fine-tuning"]
     bonus: 10

@@ -28,6 +28,7 @@ class ScoringConfig:
     components: Dict[str, float] = field(default_factory=dict)
     keyword_bonus: List[Dict[str, Any]] = field(default_factory=list)
     content_length_bonus: Optional[Dict[str, Any]] = None
+    engagement: Optional[Dict[str, Any]] = None
 
 
 @dataclass
@@ -61,6 +62,24 @@ class Config:
     scoring_config: Optional[Dict[str, Any]] = None
 
 
+def _deep_merge(base: Any, override: Any) -> Any:
+    """
+    深度合并配置（override 覆盖 base）
+
+    - dict: 递归合并
+    - list/其他: 直接覆盖
+    """
+    if isinstance(base, dict) and isinstance(override, dict):
+        merged = dict(base)
+        for key, value in override.items():
+            if key in merged:
+                merged[key] = _deep_merge(merged[key], value)
+            else:
+                merged[key] = value
+        return merged
+    return override
+
+
 class ConfigLoader:
     """
     配置加载器
@@ -83,29 +102,56 @@ class ConfigLoader:
         self.config_dir = Path(config_dir)
         self._config: Optional[Config] = None
 
-    def load(self, sources_file: str = "sources.yaml",
-             scoring_file: str = "scoring.yaml") -> Config:
+    def load(
+        self,
+        sources_file: str = "sources.yaml",
+        scoring_file: str = "scoring.yaml",
+        fallback_dir: Optional[str] = None
+    ) -> Config:
         """
         加载配置文件
 
         Args:
             sources_file: 数据源配置文件名
             scoring_file: 评分配置文件名
+            fallback_dir: 兜底配置目录（用于与用户配置合并）
 
         Returns:
             Config: 解析后的配置对象
         """
-        # 加载数据源配置
+        # 先加载主配置
+        sources_data = {}
         sources_path = self.config_dir / sources_file
-        with open(sources_path, 'r', encoding='utf-8') as f:
-            sources_data = yaml.safe_load(f)
+        if sources_path.exists():
+            with open(sources_path, 'r', encoding='utf-8') as f:
+                sources_data = yaml.safe_load(f) or {}
 
-        # 加载评分配置
-        scoring_path = self.config_dir / scoring_file
         scoring_data = None
+        scoring_path = self.config_dir / scoring_file
         if scoring_path.exists():
             with open(scoring_path, 'r', encoding='utf-8') as f:
-                scoring_data = yaml.safe_load(f)
+                scoring_data = yaml.safe_load(f) or {}
+
+        # 如提供兜底配置，则与主配置合并（主配置优先）
+        if fallback_dir:
+            fallback_dir = Path(fallback_dir)
+            fallback_sources = {}
+            fallback_scoring = None
+
+            fallback_sources_path = fallback_dir / sources_file
+            if fallback_sources_path.exists():
+                with open(fallback_sources_path, 'r', encoding='utf-8') as f:
+                    fallback_sources = yaml.safe_load(f) or {}
+
+            fallback_scoring_path = fallback_dir / scoring_file
+            if fallback_scoring_path.exists():
+                with open(fallback_scoring_path, 'r', encoding='utf-8') as f:
+                    fallback_scoring = yaml.safe_load(f) or {}
+
+            if fallback_sources:
+                sources_data = _deep_merge(fallback_sources, sources_data)
+            if fallback_scoring is not None:
+                scoring_data = _deep_merge(fallback_scoring, scoring_data or {})
 
         # 解析配置
         self._config = self._parse_config(sources_data, scoring_data)
@@ -176,7 +222,8 @@ class ConfigLoader:
             formula=scoring_data.get('formula'),
             components=scoring_data.get('components', {}),
             keyword_bonus=scoring_data.get('keyword_bonus', []),
-            content_length_bonus=scoring_data.get('content_length_bonus')
+            content_length_bonus=scoring_data.get('content_length_bonus'),
+            engagement=scoring_data.get('engagement')
         )
 
         return SourceConfig(

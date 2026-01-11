@@ -3,6 +3,7 @@
 根据配置规则对内容进行评分
 """
 
+import math
 import re
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
@@ -207,11 +208,30 @@ class Scorer:
         points = raw.get('points', 0) or 0
         comments = raw.get('comments', 0) or 0
 
-        components = scoring.get('components', {})
-        points_weight = components.get('points_weight', 0.4)
-        comments_weight = components.get('comments_weight', 0.6)
+        engagement_config = scoring.get('engagement', {})
+        if engagement_config:
+            points_weight = engagement_config.get('points_weight', 0.4)
+            comments_weight = engagement_config.get('comments_weight', 0.6)
+            transform = str(engagement_config.get('transform', '')).lower()
+            scale = engagement_config.get('scale', 1.0)
+        else:
+            components = scoring.get('components', {})
+            points_weight = components.get('points_weight', 0.4)
+            comments_weight = components.get('comments_weight', 0.6)
+            transform = ''
+            scale = 1.0
 
-        return points * points_weight + comments * comments_weight
+        def apply_transform(value: float) -> float:
+            if transform == 'log1p':
+                return math.log1p(max(value, 0))
+            if transform == 'sqrt':
+                return math.sqrt(max(value, 0))
+            return value
+
+        transformed_points = apply_transform(points)
+        transformed_comments = apply_transform(comments)
+
+        return (transformed_points * points_weight + transformed_comments * comments_weight) * scale
 
     def _calculate_content_bonus(
         self,

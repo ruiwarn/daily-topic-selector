@@ -19,7 +19,7 @@ class TestConfigLoader:
     @pytest.fixture
     def config_loader(self):
         """创建配置加载器实例"""
-        config_dir = project_root / 'config'
+        config_dir = project_root / 'skills' / 'daily-topic-selector' / 'config'
         return ConfigLoader(str(config_dir))
 
     def test_load_config(self, config_loader):
@@ -102,7 +102,7 @@ class TestSourceConfig:
 
     @pytest.fixture
     def config_loader(self):
-        config_dir = project_root / 'config'
+        config_dir = project_root / 'skills' / 'daily-topic-selector' / 'config'
         loader = ConfigLoader(str(config_dir))
         loader.load()
         return loader

@@ -118,8 +118,11 @@ def main():
     log_level = 'DEBUG' if args.verbose else args.log_level
     logger = setup_logger(level=log_level)
 
-    # 输出目录
-    output_dir = Path(args.output_dir)
+    # 输出目录：未指定时默认 daily_output/YYYY-MM-DD
+    if args.output_dir == '.':
+        output_dir = Path.cwd() / 'daily_output' / started_at.strftime('%Y-%m-%d')
+    else:
+        output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # 历史文件
@@ -138,10 +141,12 @@ def main():
     user_config_dir = Path.home() / '.config' / 'daily-topic-selector'
     default_config_dir = project_root / 'config'
 
+    fallback_config_dir = None
     if args.config:
         config_dir = args.config
     elif user_config_dir.exists():
         config_dir = str(user_config_dir)
+        fallback_config_dir = str(default_config_dir)
     else:
         config_dir = str(default_config_dir)
 
@@ -149,7 +154,7 @@ def main():
 
     try:
         config_loader = ConfigLoader(config_dir)
-        config = config_loader.load()
+        config = config_loader.load(fallback_dir=fallback_config_dir)
     except Exception as e:
         logger.error(f"配置加载失败: {e}")
         fetch_log.end()
@@ -266,10 +271,13 @@ def main():
     # 生成输出文件
     output_files = []
 
+    # 增量模式默认只输出新增
+    items_to_output = new_items if args.incremental else deduped_items
+
     # 1. daily_topics.md
     md_path = str(output_dir / 'daily_topics.md')
     generate_markdown(
-        items=deduped_items,
+        items=items_to_output,
         stats=stats,
         output_path=md_path,
         since=since_str,
@@ -281,7 +289,7 @@ def main():
     # 2. daily_topics.json
     json_path = str(output_dir / 'daily_topics.json')
     generate_json(
-        items=deduped_items,
+        items=items_to_output,
         output_path=json_path
     )
     output_files.append(json_path)
@@ -317,11 +325,24 @@ def main():
 
     # 退出码
     if all(s.get('success', False) for s in source_stats.values()):
-        return 0
+        exit_code = 0
     elif any(s.get('success', False) for s in source_stats.values()):
-        return 0  # 部分成功
+        exit_code = 0  # 部分成功
     else:
-        return 1  # 全部失败
+        exit_code = 1  # 全部失败
+
+    # 输出 RESULT 区块，供上层工具解析
+    result_lines = [
+        "===== RESULT =====",
+        f"OUTPUT_DIR={output_dir}",
+        f"JSON_FILE={json_path}",
+        f"MD_FILE={md_path}",
+        f"NEW_COUNT={len(new_items)}",
+        "==================",
+    ]
+    print("\n".join(result_lines))
+
+    return exit_code
 
 
 def fetch_source(

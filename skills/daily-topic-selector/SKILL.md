@@ -1,3 +1,4 @@
+---
 name: daily-topic-selector
 version: "1.0.0"
 description: Daily topic fetcher that collects articles from multiple sources (RSS, API, HTML), scores and ranks them by relevance, and generates enhanced Chinese reports.
@@ -42,29 +43,29 @@ triggers:
 ### 基础用法
 
 ```bash
-# 抓取最近 1 天的内容（输出到项目目录的 daily_output/）
-python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR
+# 抓取最近 1 天的内容（输出到当前目录的 daily_output/）
+python $SKILL_DIR/scripts/run.py
 
 # 抓取最近 N 天的内容
-python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --days 3
+python $SKILL_DIR/scripts/run.py --days 3
 
 # 指定其他输出目录
 python $SKILL_DIR/scripts/run.py --output_dir /path/to/output
 ```
 
-**注意**：必须指定 `--output_dir $SKILL_DIR` 以确保输出文件位于 `$SKILL_DIR/daily_output/YYYY-MM-DD/` 目录下。
+**说明**：默认输出到当前工作目录下的 `daily_output/YYYY-MM-DD/` 目录。
 
 ### 高级用法
 
 ```bash
 # 只抓取特定源
-python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --only_sources hn,import_ai
+python $SKILL_DIR/scripts/run.py --only_sources hn,import_ai
 
 # 指定时间范围
-python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --since 2024-01-01T00:00:00Z
+python $SKILL_DIR/scripts/run.py --since 2024-01-01T00:00:00Z
 
 # 调整抓取参数
-python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --limit_per_source 100 --timeout 30
+python $SKILL_DIR/scripts/run.py --limit_per_source 100 --timeout 30
 ```
 
 ## 输出文件
@@ -81,22 +82,29 @@ python $SKILL_DIR/scripts/run.py --output_dir $SKILL_DIR --limit_per_source 100 
 
 ## 执行流程
 
-此 skill 分两步执行：
+当用户触发此 skill 时，按以下步骤执行：
 
-### 步骤 1：数据抓取（Python 脚本）
+### 步骤 1：运行 Python 脚本抓取数据
 
-运行 `run.py` 抓取数据并生成原始输出文件。
+```bash
+python3 $SKILL_DIR/scripts/run.py
+```
 
-### 步骤 2：内容增强（Claude 后处理）
+脚本完成后会输出结构化结果：
+```
+===== RESULT =====
+OUTPUT_DIR=/path/to/daily_output/YYYY-MM-DD
+JSON_FILE=/path/to/daily_output/YYYY-MM-DD/daily_topics.json
+MD_FILE=/path/to/daily_output/YYYY-MM-DD/daily_topics.md
+NEW_COUNT=33
+==================
+```
 
-**重要**：Python 脚本执行完成后，你需要自动执行以下后处理步骤来增强可读性：
+### 步骤 2：读取 JSON_FILE 进行后处理
 
-1. **读取数据**：读取同目录下的 `daily_topics.json` 获取所有条目
-2. **翻译标题**：对于英文标题，生成简洁的中文翻译
-3. **生成摘要**：根据标题和上下文，为每个条目生成 1-2 句中文摘要
-4. **生成增强版文件**：在**同一目录下**创建 `daily_topics_zh.md`（不要覆盖原文件）
-
-**关键**：增强版文件必须与原始文件在同一目录下（如 `daily_output/2026-01-10/daily_topics_zh.md`），不要放到其他位置。
+1. 读取上述 `JSON_FILE` 路径的文件
+2. 为英文标题生成中文翻译和摘要
+3. 在 `OUTPUT_DIR` 下创建 `daily_topics_zh.md`
 
 #### 增强后的 Markdown 格式
 

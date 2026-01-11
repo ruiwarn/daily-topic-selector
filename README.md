@@ -88,6 +88,9 @@ git pull && rm -rf ~/.claude/skills/daily-topic-selector && cp -r skills/daily-t
 2. `~/.config/daily-topic-selector/` （用户自定义配置）
 3. skill 自带的 `config/` 目录（默认配置）
 
+如果你从仓库根目录直接运行脚本，建议显式传入
+`--config skills/daily-topic-selector/config`。
+
 ### 配置合并机制
 
 用户配置会与默认配置**自动合并**，而不是完全替换。这意味着：
@@ -141,6 +144,19 @@ global_keywords:
 | Import AI | RSS | AI 政策与研究深度分析 |
 | James Clear | HTML | 习惯与个人成长 |
 | Wait But Why | RSS | 长文深度思考 |
+| The Rundown AI | RSS/HTML | 每日 AI 新闻简报 |
+| Superhuman AI | HTML/RSS | 每日 3 分钟 AI 快讯 |
+| Ben's Bites | RSS/HTML | 每日 AI 新闻摘要 |
+| The Neuron | HTML/RSS | 每日 AI 新闻与工具教程 |
+| Last Week in AI | RSS/HTML | 每周 AI 新闻总结 |
+| Nate's Newsletter | RSS | AI 前沿动态与策略 |
+| OpenAI Blog | RSS/HTML | OpenAI 官方博客 |
+| Hugging Face Blog | RSS/HTML | 开源 AI 社区博客 |
+| MarkTechPost | RSS/HTML | AI 研究新闻平台 |
+| KDnuggets | RSS/HTML | 数据科学与 AI 新闻 |
+| Qbit AI | HTML/RSS | 中文 AI 媒体 |
+| AI Weekly | RSS/HTML | 每周 AI 新闻总结 |
+| Linux Do | RSS | Linux Do 社区最新帖子 |
 
 ## 输出文件
 
@@ -151,6 +167,8 @@ global_keywords:
 | `daily_topics.json` | 机器可读的 JSON 数据 |
 | `fetch_log.txt` | 抓取日志 |
 | `run_meta.json` | 运行元信息 |
+
+`daily_topics.md` 顶部会包含“健康检查”摘要，列出抓取失败的来源及错误原因，并提示频繁运行可能触发站点限制。
 
 ## 关键特性
 

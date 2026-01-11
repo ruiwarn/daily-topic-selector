@@ -33,7 +33,7 @@ class RSSFetcher(BaseFetcher):
 
         try:
             # 获取 RSS 内容
-            response = self.http_client.get_text(url)
+            response = self.http_client.get_text(url, headers=self._get_headers())
 
             # 解析 RSS
             feed = feedparser.parse(response)

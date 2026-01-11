@@ -36,7 +36,7 @@ class HTMLFetcher(BaseFetcher):
 
         try:
             # 获取页面内容
-            html = self.http_client.get_text(url)
+            html = self.http_client.get_text(url, headers=self._get_headers())
 
             # 解析 HTML
             soup = BeautifulSoup(html, 'lxml')

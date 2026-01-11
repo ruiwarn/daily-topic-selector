@@ -36,7 +36,7 @@ class JSONExtractor(BaseFetcher):
 
         try:
             # 第一步：获取 newsletter 列表
-            html = self.http_client.get_text(archive_url)
+            html = self.http_client.get_text(archive_url, headers=self._get_headers())
 
             # 提取 campaigns 数据
             campaigns = self._extract_campaigns(html)
@@ -63,7 +63,10 @@ class JSONExtractor(BaseFetcher):
 
                 # 获取 newsletter 内容
                 try:
-                    newsletter_html = self.http_client.get_text(newsletter_url)
+                    newsletter_html = self.http_client.get_text(
+                        newsletter_url,
+                        headers=self._get_headers()
+                    )
                     articles = self._extract_articles(newsletter_html, date)
                     items.extend(articles)
                 except Exception:
